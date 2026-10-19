@@ -1,0 +1,28 @@
+
+name: Build Windows geode
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Geode mod
+        id: geode
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          sdk: latest
+          target: Win64
+
+      - name: Upload mod
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeClick-Windows-geode
+          path: ${{ steps.geode.outputs.build-output }}
