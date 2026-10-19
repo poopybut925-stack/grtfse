@@ -1,0 +1,87 @@
+name: Build Windows geode
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Build Geode mod (no file exclusions)
+        id: geode
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          sdk: 5.11.2
+          target: Win64
+
+      - name: Diagnose actual binding definitions if build fails
+        if: ${{ failure() }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Write-Host '=== BINDINGS DIAGNOSTIC (NO SOURCES REMOVED) ==='
+          $searchRoots = @(
+            'bindings-repo/bindings/2.2081',
+            'build/_deps/bindings-src/bindings/2.2081',
+            'build/bindings/bindings/Geode',
+            'geode-sdk-clone/loader/include',
+            'cpm-cache/tuliphook'
+          )
+          foreach ($root in $searchRoots) {
+            if (-not (Test-Path $root)) {
+              Write-Host "Not found: $root"
+              continue
+            }
+            Write-Host "`n=== Searching source tree: $root ==="
+            $sourceFiles = @(Get-ChildItem $root -Recurse -File -ErrorAction SilentlyContinue |
+              Where-Object { $_.Extension -in @('.bro', '.hpp', '.h', '.cpp') })
+            foreach ($typeName in @('SequenceTriggerState', 'EffectManagerState')) {
+              Write-Host "--- $typeName ---"
+              $hits = @($sourceFiles | Select-String -Pattern $typeName -SimpleMatch -ErrorAction SilentlyContinue |
+                Select-Object -First 12)
+              if ($hits.Count -eq 0) { Write-Host 'NO MATCHES' }
+              foreach ($hit in $hits) {
+                Write-Host ("{0}:{1}: {2}" -f $hit.Path, $hit.LineNumber, $hit.Line.Trim())
+              }
+            }
+          }
+          $important = @(
+            'build/bindings/bindings/Geode/binding/SequenceTriggerGameObject.hpp',
+            'build/bindings/bindings/Geode/source/SequenceTriggerGameObject.cpp',
+            'build/bindings/bindings/Geode/source/GJChestSprite.cpp',
+            'build/bindings/bindings/Geode/GeneratedPredeclare.hpp',
+            'cpm-cache/tuliphook/e901/include/tulip/AbstractType.hpp'
+          )
+          foreach ($file in $important) {
+            if (-not (Test-Path $file)) { continue }
+            Write-Host "`n=== Context: $file ==="
+            $lines = @(Get-Content $file)
+            $matchingIndexes = @()
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+              if ($lines[$i] -match 'SequenceTriggerState|EffectManagerState|m_sequenceState|is_reference_v|sizeof\(Type\)') {
+                $matchingIndexes += $i
+                if ($matchingIndexes.Count -ge 8) { break }
+              }
+            }
+            foreach ($i in $matchingIndexes) {
+              $from = [Math]::Max(0, $i - 5)
+              $to = [Math]::Min($lines.Count - 1, $i + 5)
+              for ($j = $from; $j -le $to; $j++) {
+                Write-Host ('{0,4}: {1}' -f ($j + 1), $lines[$j])
+              }
+              Write-Host '---'
+            }
+          }
+
+      - name: Upload compiled Geode package
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeClick-Windows-geode
+          path: ${{ steps.geode.outputs.build-output }}
+          if-no-files-found: error
