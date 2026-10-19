@@ -1,4 +1,3 @@
-@@ -0,0 +1,26 @@
 cmake_minimum_required(VERSION 3.21)
 project(PredictiveSafeClick VERSION 0.3.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
@@ -21,6 +20,32 @@ if(WIN32 AND NOT SAFECLICK_BUILD_TESTS)
         message(FATAL_ERROR "Install Geode SDK with: geode sdk install (then: geode sdk install-binaries)")
     endif()
     add_subdirectory($ENV{GEODE_SDK} "${CMAKE_CURRENT_BINARY_DIR}/geode")
+    # WORKAROUND (Geode 5.11.2 + GD 2.2081, as of Oct 2026):
+    # Upstream codegen emits two translation units that fail because
+    # SequenceTriggerState and EffectManagerState are incomplete types.
+    # This mod does not use these classes. Omit ONLY their generated .cpp
+    # files from our local GeodeBindings static library; preserve every
+    # other binding. Remove this workaround once upstream fixes the types.
+    # This is a temporary build workaround, not a verified upstream fix.
+    if(TARGET GeodeBindings)
+        get_target_property(_safeclick_binding_sources GeodeBindings SOURCES)
+        set(_safeclick_filtered_binding_sources "")
+        set(_safeclick_skipped 0)
+        foreach(_safeclick_source IN LISTS _safeclick_binding_sources)
+            if(_safeclick_source MATCHES "(SequenceTriggerGameObject|GJBigSpriteNode)\\.cpp$")
+                message(STATUS "Skipping incompatible Geode-generated source: ${_safeclick_source}")
+                math(EXPR _safeclick_skipped "${_safeclick_skipped}+1")
+            else()
+                list(APPEND _safeclick_filtered_binding_sources "${_safeclick_source}")
+            endif()
+        endforeach()
+        if(NOT _safeclick_skipped EQUAL 4)
+            message(FATAL_ERROR "Expected 4 matching Geode binding source paths, found ${_safeclick_skipped}; do not silently build a different SDK layout")
+        endif()
+        set_property(TARGET GeodeBindings PROPERTY SOURCES "${_safeclick_filtered_binding_sources}")
+    else()
+        message(FATAL_ERROR "GeodeBindings target is missing")
+    endif()
     setup_geode_mod(${PROJECT_NAME})
 elseif(NOT SAFECLICK_BUILD_TESTS)
     message(FATAL_ERROR "This is a Windows Geode mod. For Linux-only tests set SAFECLICK_BUILD_TESTS=ON")
