@@ -1,0 +1,17 @@
+GD PREDICTIVE SAFE CLICK - CLEAN RESTART
+
+1. Extract the downloaded ZIP to a normal Windows folder.
+2. On GitHub, create an empty repository called GD-Predictive-Buffer.
+   Do not check 'Add a README', .gitignore, or license.
+3. On the new repo, choose 'uploading an existing file'.
+4. Open the extracted folder, SELECT THE ITEMS INSIDE (not the outer folder).
+   Drag CMakeLists.txt, mod.json, src, .github, README.md, etc. into GitHub.
+   Do not upload the ZIP itself.
+5. Commit changes. Open the repository CODE page, and check that
+   CMakeLists.txt and mod.json appear next to src and .github.
+6. Open Actions -> Build Windows geode -> Run workflow.
+7. If the build fails, send the FIRST red error plus some surrounding lines.
+
+NOTE: This project is EXPERIMENTAL, not a proven cheat. Actual Geode adapter
+compilation and in-game behavior remain unverified. It is deliberately OFF by
+default and is best first tested in Practice Mode.

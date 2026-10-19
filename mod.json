@@ -1,0 +1,31 @@
+{
+  "geode": "5.3.0",
+  "gd": {"win": "2.2081"},
+  "version": "v0.3.0",
+  "id": "local.predictive-safe-click",
+  "name": "Predictive Safe Click (Experimental)",
+  "developers": ["Community Prototype"],
+  "description": "Experiments with delaying a too-early cube jump until a predicted-survivable physics step. Does not guarantee safety.",
+  "tags": ["gameplay", "cheat"],
+  "settings": {
+    "enabled": {
+      "type": "bool", "name": "Enable experimental correction",
+      "description": "OFF by default. Practice on simple, static cube levels first.", "default": false
+    },
+    "practice-only": {
+      "type": "bool", "name": "Practice mode only",
+      "default": true
+    },
+    "buffer-ticks": {
+      "type": "int", "name": "Maximum delayed ticks",
+      "default": 6, "min": 1, "max": 16
+    },
+    "lookahead-ticks": {
+      "type": "int", "name": "Prediction length in ticks",
+      "default": 24, "min": 8, "max": 80
+    },
+    "log-decisions": {
+      "type": "bool", "name": "Log click decisions", "default": true
+    }
+  }
+}
