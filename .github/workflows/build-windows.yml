@@ -1,4 +1,3 @@
-
 name: Build Windows geode
 
 on:
@@ -9,7 +8,6 @@ on:
 jobs:
   windows:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,11 +16,13 @@ jobs:
         id: geode
         uses: geode-sdk/build-geode-mod@main
         with:
-          sdk: latest
+          sdk: 5.11.2
           target: Win64
+          bindings-ref: codegen
 
-      - name: Upload mod
+      - name: Upload compiled mod
         uses: actions/upload-artifact@v4
         with:
           name: SafeClick-Windows-geode
           path: ${{ steps.geode.outputs.build-output }}
+          if-no-files-found: error
